@@ -15,6 +15,8 @@
 #include "resp/dnshost.hpp"
 #include "resp/check.hpp"
 #include "resp/getpricing.hpp"
+#include "resp/create.hpp"
+#include "registration_params.hpp"
 
 namespace ignacionr::namecheap
 {
@@ -23,30 +25,52 @@ namespace ignacionr::namecheap
     public:
         cli(const std::string &apiUser, const std::string &apiKey, const std::string &clientIp)
             : apiUser(apiUser), apiKey(apiKey), clientIp(clientIp)
-        { ; }
+        {
+            ;
+        }
 
         void set_proxy(std::string const &proxy_spec)
         {
             proxies_ = cpr::Proxies{{"http", proxy_spec}, {"https", proxy_spec}};
         }
 
+        using operation_t = std::function<cpr::Response(const cpr::Url &, const cpr::Parameters &, const cpr::Proxies &)>;
+
         template <typename T>
-        T Get(std::string_view command, std::vector<std::pair<std::string,std::string>> const &additional_params = {})
+        T Op(operation_t op, std::string_view command, std::vector<std::pair<std::string, std::string>> const &additional_params = {})
         {
             cpr::Parameters params;
             AddCommonParameters(params, command);
-            for(auto const&p: additional_params) {
+            for (auto const &p : additional_params)
+            {
                 params.Add({p.first, p.second});
             }
 
-            cpr::Response r = cpr::Get(baseUrl, params, proxies_);
-            if (r.error.code != cpr::ErrorCode::OK) {
+            cpr::Response r = op(baseUrl, params, proxies_);
+            if (r.error.code != cpr::ErrorCode::OK)
+            {
                 throw std::runtime_error(r.error.message);
             }
             T result;
             result.load(r.text);
 
             return result;
+        }
+
+        template <typename T>
+        T Get(std::string_view command, std::vector<std::pair<std::string, std::string>> const &additional_params = {})
+        {
+            return Op<T>([](auto const &a, auto const &b, auto const &c)
+                         { return cpr::Get(a, b, c); },
+                         command, additional_params);
+        }
+
+        template <typename T>
+        T Post(std::string_view command, std::vector<std::pair<std::string, std::string>> const &additional_params = {})
+        {
+            return Op<T>([](auto const &a, auto const &b, auto const &c)
+                         { return cpr::Post(a, b, c); },
+                         command, additional_params);
         }
 
         response::domains_check CheckDomain(const std::string &domainName)
@@ -71,21 +95,41 @@ namespace ignacionr::namecheap
                               { return GetDomains(); });
         }
 
-        response::getpricing GetPricing() {
+        response::getpricing GetPricing()
+        {
             return Get<response::getpricing>("namecheap.users.getPricing",
-            {
-                {"ProductType", "DOMAIN"},
-                {"ProductCategory", "DOMAINS"},
-                {"ActionName", "REGISTER"}
+                                             {{"ProductType", "DOMAIN"},
+                                              {"ProductCategory", "DOMAINS"},
+                                              {"ActionName", "REGISTER"}
 
-            });
+                                             });
+        }
+
+        std::future<response::getpricing> GetPricingAsync()
+        {
+            return std::async([this]
+                              { return GetPricing(); });
+        }
+
+        response::create CreateDomain(const std::string &DomainName,
+                                      int Years,
+                                      const RegistrationParams &params)
+        {
+            std::vector<std::pair<std::string,std::string>> parameters {{"DomainName", DomainName},
+                {"Years", std::to_string(Years)}};
+            auto strategy = [&parameters](const std::string &name, const std::string &value) {
+                parameters.push_back({name, value});
+            };
+            params.save_to(strategy);
+
+            return Post<response::create>("namecheap.domains.create", parameters);
         }
 
     private:
         std::string apiUser;
         std::string apiKey;
         std::string clientIp;
-        const cpr::Url baseUrl {"https://api.namecheap.com/xml.response"};
+        const cpr::Url baseUrl{"https://api.namecheap.com/xml.response"};
         cpr::Proxies proxies_;
 
         void AddCommonParameters(cpr::Parameters &params, std::string_view command_name)
