@@ -9,15 +9,14 @@
 
 #include <cpr/cpr.h>
 
-// #include "DomainCreateParams.hpp"
 #include "resp/getdomains.hpp"
-// #include "CreateDomainResponse.hpp"
 #include "resp/dnshost.hpp"
 #include "resp/check.hpp"
 #include "resp/getpricing.hpp"
 #include "resp/create.hpp"
 #include "registration_params.hpp"
 #include "resp/gethosts.hpp"
+#include "resp/sethosts.hpp"
 
 namespace ignacionr::namecheap
 {
@@ -114,6 +113,25 @@ namespace ignacionr::namecheap
         {
             return Get<response::gethost>("namecheap.domains.dns.getHosts",
                                           {{"SLD", sld}, {"TLD", tld}});
+        }
+
+        template<typename host_list_t>
+        response::sethost SetHost(std::string const &sld, std::string const &tld, host_list_t const &hosts) 
+        {
+            std::vector<std::pair<std::string,std::string>> params {{"SLD", sld},{"TLD", tld}};
+            int count{};
+            for(Host const&h: hosts) {
+                std::string const idx {std::to_string(++count)};
+                params.push_back({"Address" + idx, h.Address});
+                params.push_back({"HostId" + idx, std::to_string(h.HostId)});
+                if (h.MXPref.has_value()) {
+                    params.push_back({"MXPref" + idx, std::to_string(h.MXPref.value())});
+                }
+                params.push_back({"Name" + idx, h.Name});
+                params.push_back({"TTL" + idx, std::to_string(h.TTL)});
+                params.push_back({"Type" + idx, h.Type});
+            }
+            return Post<response::sethost>("namecheap.domains.dns.setHosts", params);
         }
 
     private:

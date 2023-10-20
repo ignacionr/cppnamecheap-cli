@@ -5,31 +5,13 @@
 #include <vector>
 #include <tinyxml2.h>
 #include "base.hpp"
+#include "../host.hpp"
 
 namespace ignacionr::namecheap::response
 {
     class gethost : public ApiResponse {
     public:
-    struct Host{
-        Host(tinyxml2::XMLElement const &el) {
-            HostId = el.UnsignedAttribute("HostId");
-            Name = el.Attribute("Name");
-            Type = el.Attribute("Type");
-            Address = el.Attribute("Address");
-            uint vMXPref;
-            if (tinyxml2::XMLError::XML_SUCCESS == el.QueryAttribute("MXPref", &vMXPref)) {
-                MXPref = vMXPref;
-            }
-            TTL = el.UnsignedAttribute("TTL");
-        }
 
-        uint HostId;
-        std::string Name;
-        std::string Type;
-        std::string Address;
-        std::optional<uint> MXPref;
-        uint TTL;
-    };
     struct DomainDNSGetHostsResult{
         std::string Domain;
         bool IsUsingOurDNS;
@@ -43,7 +25,8 @@ namespace ignacionr::namecheap::response
         }
     };
     protected:
-        virtual void load_from(VisitorFan &fan) {
+        virtual void load_from(VisitorFan &fan) 
+        {
             fan.element_sink() = [this, &fan](tinyxml2::XMLElement const &el){
                 if (0 == std::strcmp(el.Name(), "DomainDNSGetHostsResult")) {
                     results_.push_back({
