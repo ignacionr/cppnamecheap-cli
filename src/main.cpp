@@ -16,12 +16,17 @@ int main() {
     std::string proxy_spec = "socks5://localhost:1080";
     cli.set_proxy(proxy_spec);
 
-    auto res = cli.GetDomains();
-    std::cout << "domains: " << res.domains().size() << std::endl;
-    for (auto const &d: res.domains()) {
-        std::cout << d << std::endl;
+    try {
 
-    }
+    auto res = cli.GetPricing();
+    std::cout << res.save() << std::endl;
+
+    // auto res = cli.GetDomains();
+    // std::cout << "domains: " << res.domains().size() << std::endl;
+    // for (auto const &d: res.domains()) {
+    //     std::cout << d << std::endl;
+
+    // }
 
     // auto dom3 = cli.CheckDomain("yetanotherone.com");
     // std::cout << "yetanotherone.com\n";
@@ -34,5 +39,10 @@ int main() {
     // print_result(dom1.get().results()[0]);
     // std::cout << "thisshouldworkyes.com\n";
     // print_result(dom2.get().results()[0]);
+    }
+    catch(std::exception &ex) {
+        std::cerr << "Unable to complete the job: " << ex.what() << std::endl;
+        return -1;
+    }
     return 0;
 }

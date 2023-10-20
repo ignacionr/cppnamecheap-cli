@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "base.hpp"
+#include "conversions.hpp"
 
 namespace ignacionr::namecheap::response
 {
@@ -61,8 +62,8 @@ namespace ignacionr::namecheap::response
             el.UnsignedAttribute("ID"),
             el.Attribute("Name"),
             el.Attribute("User"),
-            USDateToTimePoint(el.Attribute("Created")),
-            USDateToTimePoint(el.Attribute("Expires")),
+            convert::USDateToTimePoint(el.Attribute("Created")),
+            convert::USDateToTimePoint(el.Attribute("Expires")),
             el.BoolAttribute("IsExpired"),
             el.BoolAttribute("IsLocked"),
             el.BoolAttribute("AutoRenew"),

@@ -1,5 +1,6 @@
 #pragma once
 #include <chrono>
+#include <exception>
 #include <functional>
 #include <stack>
 #include <vector>
@@ -23,6 +24,7 @@ namespace ignacionr::namecheap::response
             auto const &top{handlers_.top().second};
             return top.element_sink_ ? top.element_sink_(element) : true;
         }
+
         virtual bool VisitExit(const tinyxml2::XMLElement &element)
         {
             if (&element == handlers_.top().first)
@@ -31,6 +33,7 @@ namespace ignacionr::namecheap::response
             }
             return true;
         }
+
         bool Visit(const tinyxml2::XMLText &text) override
         {
             auto const &top{handlers_.top().second};
@@ -40,9 +43,10 @@ namespace ignacionr::namecheap::response
         with_element_t &element_sink() { return handlers_.top().second.element_sink_; }
         with_text_t &text_sink() { return handlers_.top().second.text_sink_; }
 
-        void push(tinyxml2::XMLElement const *el)
+        auto &push(tinyxml2::XMLElement const *el)
         {
             handlers_.push({el, {}});
+            return *this;
         }
 
     private:
@@ -85,30 +89,42 @@ namespace ignacionr::namecheap::response
             };
             doc.Accept(&fan);
         }
+        
+        std::string save()
+        {
+            tinyxml2::XMLDocument doc;
+            
+            // Create the root ApiResponse element
+            tinyxml2::XMLElement* root = doc.NewElement("ApiResponse");
+            root->SetAttribute("Status", success ? "OK" : "Failed");
+            doc.InsertEndChild(root);
+
+            // Add Errors, if any
+            for(const auto& err : errors)
+            {
+                tinyxml2::XMLElement* errElem = doc.NewElement("Error");
+                tinyxml2::XMLText* errText = doc.NewText(err.c_str());
+                errElem->InsertEndChild(errText);
+                root->InsertEndChild(errElem);
+            }
+
+            // Call the derived class specific serialization method
+            save_to(doc, root);
+
+            // Serialize to string
+            tinyxml2::XMLPrinter printer;
+            doc.Print(&printer);
+            return printer.CStr();
+        }
+
         bool success;
         std::vector<std::string> errors;
 
     protected:
         virtual void load_from(VisitorFan &fan) = 0;
+        virtual void save_to(tinyxml2::XMLDocument& doc, tinyxml2::XMLElement* root) const {
+            throw std::runtime_error("This class does not support saving.");
+        }
     };
 
-    std::chrono::system_clock::time_point USDateToTimePoint(const std::string &date)
-    {
-        std::tm tm = {};
-        std::istringstream ss(date);
-        char delimiter;
-
-        // Parse string in MM/DD/YYYY format
-        ss >> tm.tm_mon >> delimiter >> tm.tm_mday >> delimiter >> tm.tm_year;
-
-        // Adjust for tm structure (months are [0, 11], years since 1900)
-        tm.tm_mon -= 1;
-        tm.tm_year -= 1900;
-
-        // Convert to time_t
-        std::time_t time = std::mktime(&tm);
-
-        // Convert to std::chrono::system_clock::time_point
-        return std::chrono::system_clock::from_time_t(time);
-    }
 }

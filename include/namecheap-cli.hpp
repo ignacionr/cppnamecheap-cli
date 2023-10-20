@@ -1,15 +1,20 @@
 #pragma once
+
 #include <future>
+#include <iostream>
 #include <string>
 #include <string_view>
-#include <iostream>
+#include <vector>
+#include <utility>
+
 #include <cpr/cpr.h>
-#include <tinyxml2.h>
+
 // #include "DomainCreateParams.hpp"
 #include "resp/getdomains.hpp"
 // #include "CreateDomainResponse.hpp"
 #include "resp/dnshost.hpp"
 #include "resp/check.hpp"
+#include "resp/getpricing.hpp"
 
 namespace ignacionr::namecheap
 {
@@ -18,10 +23,7 @@ namespace ignacionr::namecheap
     public:
         cli(const std::string &apiUser, const std::string &apiKey, const std::string &clientIp)
             : apiUser(apiUser), apiKey(apiKey), clientIp(clientIp)
-        {
-            // Base URL for Namecheap API
-            baseUrl = "https://api.namecheap.com/xml.response";
-        }
+        { ; }
 
         void set_proxy(std::string const &proxy_spec)
         {
@@ -37,7 +39,10 @@ namespace ignacionr::namecheap
                 params.Add({p.first, p.second});
             }
 
-            cpr::Response r = cpr::Get(cpr::Url{baseUrl}, params, proxies_);
+            cpr::Response r = cpr::Get(baseUrl, params, proxies_);
+            if (r.error.code != cpr::ErrorCode::OK) {
+                throw std::runtime_error(r.error.message);
+            }
             T result;
             result.load(r.text);
 
@@ -66,11 +71,21 @@ namespace ignacionr::namecheap
                               { return GetDomains(); });
         }
 
+        response::getpricing GetPricing() {
+            return Get<response::getpricing>("namecheap.users.getPricing",
+            {
+                {"ProductType", "DOMAIN"},
+                {"ProductCategory", "DOMAINS"},
+                {"ActionName", "REGISTER"}
+
+            });
+        }
+
     private:
-        std::string baseUrl;
         std::string apiUser;
         std::string apiKey;
         std::string clientIp;
+        const cpr::Url baseUrl {"https://api.namecheap.com/xml.response"};
         cpr::Proxies proxies_;
 
         void AddCommonParameters(cpr::Parameters &params, std::string_view command_name)
