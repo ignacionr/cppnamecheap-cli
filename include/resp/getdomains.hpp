@@ -127,23 +127,3 @@ namespace ignacionr::namecheap::response
         unsigned long PageSize;
     };
 }
-
-//<?xml version="1.0" encoding="utf-8"?>
-//<ApiResponse Status="OK" xmlns="http://api.namecheap.com/xml.response">
-//  <Errors />
-//  <Warnings />
-//  <RequestedCommand>namecheap.domains.getlist</RequestedCommand>
-//  <CommandResponse Type="namecheap.domains.getList">
-//    <DomainGetListResult>
-//      <Domain ID="70727186" Name="webdomina.com" User="eliciam" Created="09/03/2023" Expires="09/03/2025" IsExpired="false" IsLocked="false" AutoRenew="false" WhoisGuard="ENABLED" IsPremium="false" IsOurDNS="true" />
-//    </DomainGetListResult>
-//    <Paging>
-//      <TotalItems>1</TotalItems>
-//      <CurrentPage>1</CurrentPage>
-//      <PageSize>100</PageSize>
-//    </Paging>
-//  </CommandResponse>
-//  <Server>PHX01APIEXT02</Server>
-//  <GMTTimeDifference>--4:00</GMTTimeDifference>
-//  <ExecutionTime>0.074</ExecutionTime>
-//</ApiResponse>

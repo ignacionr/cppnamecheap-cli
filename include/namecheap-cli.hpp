@@ -17,6 +17,7 @@
 #include "resp/getpricing.hpp"
 #include "resp/create.hpp"
 #include "registration_params.hpp"
+#include "resp/gethosts.hpp"
 
 namespace ignacionr::namecheap
 {
@@ -78,21 +79,9 @@ namespace ignacionr::namecheap
             return Get<response::domains_check>("namecheap.domains.check", {{"DomainList", domainName}});
         }
 
-        std::future<response::domains_check> CheckDomainAsync(const std::string &domainName)
-        {
-            return std::async([this, domainName]
-                              { return CheckDomain(domainName); });
-        }
-
         response::getdomains GetDomains()
         {
             return Get<response::getdomains>("namecheap.domains.getlist");
-        }
-
-        std::future<response::getdomains> GetDomainsAsync()
-        {
-            return std::async([this]
-                              { return GetDomains(); });
         }
 
         response::getpricing GetPricing()
@@ -105,24 +94,26 @@ namespace ignacionr::namecheap
                                              });
         }
 
-        std::future<response::getpricing> GetPricingAsync()
-        {
-            return std::async([this]
-                              { return GetPricing(); });
-        }
-
-        response::create CreateDomain(const std::string &DomainName,
+        response::create CreateDomain(std::string const &DomainName,
                                       int Years,
                                       const RegistrationParams &params)
         {
-            std::vector<std::pair<std::string,std::string>> parameters {{"DomainName", DomainName},
+            std::vector<std::pair<std::string, std::string>> parameters{
+                {"DomainName", DomainName},
                 {"Years", std::to_string(Years)}};
-            auto strategy = [&parameters](const std::string &name, const std::string &value) {
+            auto strategy = [&parameters](const std::string &name, const std::string &value)
+            {
                 parameters.push_back({name, value});
             };
             params.save_to(strategy);
 
             return Post<response::create>("namecheap.domains.create", parameters);
+        }
+
+        response::gethost GetHost(std::string const &sld, std::string const &tld)
+        {
+            return Get<response::gethost>("namecheap.domains.dns.getHosts",
+                                          {{"SLD", sld}, {"TLD", tld}});
         }
 
     private:
