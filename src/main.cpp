@@ -18,8 +18,8 @@ int main() {
 
     try {
 
-    auto res = cli.GetPricing();
-    std::cout << res.save() << std::endl;
+    // auto res = cli.GetPricing();
+    // std::cout << res.save() << std::endl;
 
     // auto res = cli.GetDomains();
     // std::cout << "domains: " << res.domains().size() << std::endl;
@@ -27,6 +27,14 @@ int main() {
     //     std::cout << d << std::endl;
 
     // }
+
+    auto dom3 = cli.CheckDomain("yetanotherone.com,thismaywork.net,liability.coffee,someonecares.online");
+    std::cout << "yetanotherone.com\n";
+
+    for(auto const&r: dom3.results()) {
+        std::cout << r << std::endl;
+    }
+
 
     // auto dom3 = cli.CheckDomain("yetanotherone.com");
     // std::cout << "yetanotherone.com\n";

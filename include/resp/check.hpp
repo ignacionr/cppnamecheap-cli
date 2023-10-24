@@ -3,9 +3,11 @@
 #include <tinyxml2.h>
 #include "base.hpp"
 
-namespace ignacionr::namecheap::response {
+namespace ignacionr::namecheap::response
+{
 
-    struct DomainCheckResult {
+    struct DomainCheckResult
+    {
         DomainCheckResult(const tinyxml2::XMLElement &el)
         {
             Domain = el.Attribute("Domain");
@@ -21,6 +23,22 @@ namespace ignacionr::namecheap::response {
             EapFee = el.DoubleAttribute("EapFee");
         }
 
+        // Friend function for operator<<
+        friend std::ostream &operator<<(std::ostream &os, const DomainCheckResult &result)
+        {
+            os << "Domain: " << result.Domain << '\n'
+               << "Available: " << std::boolalpha << result.Available << '\n'
+               << "ErrorNo: " << result.ErrorNo << '\n'
+               << "Description: " << result.Description << '\n'
+               << "IsPremiumName: " << std::boolalpha << result.IsPremiumName << '\n'
+               << "PremiumRegistrationPrice: " << result.PremiumRegistrationPrice << '\n'
+               << "PremiumRenewalPrice: " << result.PremiumRenewalPrice << '\n'
+               << "PremiumRestorePrice: " << result.PremiumRestorePrice << '\n'
+               << "PremiumTransferPrice: " << result.PremiumTransferPrice << '\n'
+               << "IcannFee: " << result.IcannFee << '\n'
+               << "EapFee: " << result.EapFee;
+            return os;
+        }
         std::string Domain;
         bool Available;
         uint ErrorNo;
@@ -34,11 +52,14 @@ namespace ignacionr::namecheap::response {
         double EapFee;
     };
 
-    class domains_check: public ApiResponse {
-        public:
+    class domains_check : public ApiResponse
+    {
+    public:
         std::vector<DomainCheckResult> const &results() const { return results_; }
+
     protected:
-        void load_from(VisitorFan &fan) override {
+        void load_from(VisitorFan &fan) override
+        {
             fan.element_sink() = [this](tinyxml2::XMLElement const &el)
             {
                 if (0 == std::strcmp(el.Name(), "DomainCheckResult"))
@@ -48,6 +69,7 @@ namespace ignacionr::namecheap::response {
                 return true;
             };
         }
+
     private:
         std::vector<DomainCheckResult> results_;
     };
