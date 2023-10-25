@@ -59,6 +59,8 @@ namespace ignacionr::namecheap::response
             }
         };
 
+        std::vector<Product> const &products() const { return products_; }
+
     protected:
         void load_from(VisitorFan &fan) override
         {
