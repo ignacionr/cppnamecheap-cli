@@ -25,7 +25,7 @@ namespace ignacionr::namecheap::response
             return top.element_sink_ ? top.element_sink_(element) : true;
         }
 
-        virtual bool VisitExit(const tinyxml2::XMLElement &element) override
+        bool VisitExit(const tinyxml2::XMLElement &element) override
         {
             if (&element == handlers_.top().first)
             {
