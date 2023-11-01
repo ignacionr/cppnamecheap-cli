@@ -20,11 +20,11 @@ namespace ignacionr::namecheap {
             TTL = el.UnsignedAttribute("TTL");
         }
 
-        uint HostId;
+        uint HostId{};
         std::string Name;
         std::string Type;
         std::string Address;
         std::optional<uint> MXPref;
-        uint TTL;
+        uint TTL{1800};
     };
 }

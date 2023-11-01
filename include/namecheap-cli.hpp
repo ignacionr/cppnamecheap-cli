@@ -61,7 +61,7 @@ namespace ignacionr::namecheap
         T Get(std::string_view command, std::vector<std::pair<std::string, std::string>> const &additional_params = {})
         {
             return Op<T>([](auto const &a, auto const &b, auto const &c)
-                         { return cpr::Get(a, b, c); },
+                         { return cpr::Get(a, b, c, cpr::Timeout(2000)); },
                          command, additional_params);
         }
 
@@ -73,29 +73,48 @@ namespace ignacionr::namecheap
                          command, additional_params);
         }
 
-        response::domains_check CheckDomain(const std::string &domainName)
+        template <typename T>
+        T throw_if_error(T const &result)
         {
-            return Get<response::domains_check>("namecheap.domains.check", {{"DomainList", domainName}});
+            if (!result.success)
+            {
+                throw std::runtime_error(std::accumulate(result.errors.begin(),
+                                                         result.errors.end(),
+                                                         std::string{},
+                                                         [](std::string r, std::string const &e)
+                                                         {
+                                                             r += e;
+                                                             r += "\n";
+                                                             return r;
+                                                         }));
+            }
+            return result;
         }
 
-        response::getdomains GetDomains()
+        response::domains_check
+        check_domains(const std::string &domain_names)
         {
-            return Get<response::getdomains>("namecheap.domains.getlist");
+            return throw_if_error(Get<response::domains_check>("namecheap.domains.check", {{"DomainList", domain_names}}));
         }
 
-        response::getpricing GetPricing()
+        response::getdomains get_domains()
         {
-            return Get<response::getpricing>("namecheap.users.getPricing",
+            return throw_if_error(Get<response::getdomains>("namecheap.domains.getlist"));
+        }
+
+        response::getpricing get_pricing()
+        {
+            return throw_if_error(Get<response::getpricing>("namecheap.users.getPricing",
                                              {{"ProductType", "DOMAIN"},
                                               {"ProductCategory", "DOMAINS"},
                                               {"ActionName", "REGISTER"}
 
-                                             });
+                                             }));
         }
 
-        response::create CreateDomain(std::string const &DomainName,
-                                      int Years,
-                                      const RegistrationParams &params)
+        response::create create_domain(std::string const &DomainName,
+                                       int Years,
+                                       const RegistrationParams &params)
         {
             std::vector<std::pair<std::string, std::string>> parameters{
                 {"DomainName", DomainName},
@@ -106,32 +125,35 @@ namespace ignacionr::namecheap
             };
             params.save_to(strategy);
 
-            return Post<response::create>("namecheap.domains.create", parameters);
+            return throw_if_error(Post<response::create>("namecheap.domains.create", parameters));
         }
 
-        response::gethost GetHost(std::string const &sld, std::string const &tld)
+        response::gethost get_hosts(std::string const &sld, std::string const &tld)
         {
-            return Get<response::gethost>("namecheap.domains.dns.getHosts",
-                                          {{"SLD", sld}, {"TLD", tld}});
+            return throw_if_error(Get<response::gethost>("namecheap.domains.dns.getHosts",
+                                          {{"SLD", sld}, {"TLD", tld}}));
         }
 
-        template<typename host_list_t>
-        response::sethost SetHost(std::string const &sld, std::string const &tld, host_list_t const &hosts) 
+        template <typename host_list_t>
+        response::sethost set_hosts(std::string const &sld, std::string const &tld, host_list_t const &hosts)
         {
-            std::vector<std::pair<std::string,std::string>> params {{"SLD", sld},{"TLD", tld}};
+            std::vector<std::pair<std::string, std::string>> params{{"SLD", sld}, {"TLD", tld}};
             int count{};
-            for(Host const&h: hosts) {
-                std::string const idx {std::to_string(++count)};
+            for (Host const &h : hosts)
+            {
+                std::string const idx{std::to_string(++count)};
                 params.push_back({"Address" + idx, h.Address});
-                params.push_back({"HostId" + idx, std::to_string(h.HostId)});
-                if (h.MXPref.has_value()) {
+                if (h.HostId)
+                    params.push_back({"HostId" + idx, std::to_string(h.HostId)});
+                if (h.MXPref.has_value())
+                {
                     params.push_back({"MXPref" + idx, std::to_string(h.MXPref.value())});
                 }
-                params.push_back({"Name" + idx, h.Name});
+                params.push_back({"HostName" + idx, h.Name});
                 params.push_back({"TTL" + idx, std::to_string(h.TTL)});
-                params.push_back({"Type" + idx, h.Type});
+                params.push_back({"RecordType" + idx, h.Type});
             }
-            return Post<response::sethost>("namecheap.domains.dns.setHosts", params);
+            return throw_if_error(Get<response::sethost>("namecheap.domains.dns.setHosts", params));
         }
 
     private:

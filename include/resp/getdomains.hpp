@@ -21,6 +21,12 @@ namespace ignacionr::namecheap::response
         std::string WhoisGuard;
         bool IsPremium;
         bool IsOurDNS;
+        const std::string sld() const {
+            return Name.substr(0, Name.find('.'));
+        }
+        const std::string tld() const {
+            return Name.substr(Name.find('.') + 1);
+        }
     };
 
     std::ostream &operator<<(std::ostream &os, const std::chrono::system_clock::time_point &tp)
