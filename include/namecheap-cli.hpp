@@ -24,9 +24,12 @@ namespace ignacionr::namecheap
     {
     public:
         cli(const std::string &apiUser, const std::string &apiKey, const std::string &clientIp)
-            : apiUser(apiUser), apiKey(apiKey), clientIp(clientIp)
+        : apiUser(apiUser), apiKey(apiKey), clientIp(clientIp)
         {
-            ;
+            // Validate inputs
+            if (apiUser.empty() || apiKey.empty() || clientIp.empty()) {
+                throw std::invalid_argument("Invalid arguments provided");
+            }
         }
 
         void set_proxy(std::string const &proxy_spec)
@@ -156,10 +159,12 @@ namespace ignacionr::namecheap
             return throw_if_error(Get<response::sethost>("namecheap.domains.dns.setHosts", params));
         }
 
+        auto const getApiUser() const { return apiUser; }
+
     private:
-        std::string apiUser;
-        std::string apiKey;
-        std::string clientIp;
+        std::string const apiUser;
+        std::string const apiKey;
+        std::string const clientIp;
         const cpr::Url baseUrl{"https://api.namecheap.com/xml.response"};
         cpr::Proxies proxies_;
 
